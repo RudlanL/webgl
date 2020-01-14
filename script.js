@@ -7,6 +7,13 @@ const Scene = {
         camera: null,
         renderer: null
     },
+    render: () => {
+        Scene.vars.renderer.render(Scene.vars.scene,Scene.vars.camera);
+
+    },
+    animate: () => {
+        Scene.render();
+    },
     init: () =>{
         console.log("init");
         let vars = Scene.vars;
@@ -26,5 +33,16 @@ const Scene = {
         vars.renderer.shadowMapSoft = true;
         vars.container.appendChild(vars.renderer.domElement);
 
+        //Création de la camera
+        vars.camera = new THREE.PerspectiveCamera(57,window.innerWidth /window.innerHeight,1,2000)
+        vars.camera.position.set(0,210,572);
+
+        //Creation de l'HemishereLight
+        let hemilight = new THREE.HemisphereLight(0xFFFFFF,0x444444,0.5);
+        hemilight.position.set(0,700,0);
+        vars.scene.add(hemilight);
+        
+        Scene.animate();
     }
-}
+};
+Scene.init();
