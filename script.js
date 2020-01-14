@@ -1,11 +1,15 @@
 import * as THREE from './vendor/three.js-master/build/three.module.js';
+import {
+    OrbitControls
+} from './vendor/three.js-master/examples/jsm/controls/OrbitControls.js';
 
 const Scene = {
     vars:{
         container : null,
         scene: null,
         camera: null,
-        renderer: null
+        renderer: null,
+        controls: null
     },
     render: () => {
         Scene.vars.renderer.render(Scene.vars.scene,Scene.vars.camera);
@@ -35,13 +39,24 @@ const Scene = {
 
         //Création de la camera
         vars.camera = new THREE.PerspectiveCamera(57,window.innerWidth /window.innerHeight,1,2000)
-        vars.camera.position.set(0,210,572);
+        vars.camera.position.set(0,510,1000);
+        vars.camera.rotation.x = -Math.PI /5;
+
+    
 
         //Creation de l'HemishereLight
         let hemilight = new THREE.HemisphereLight(0xFFFFFF,0x444444,0.5);
         hemilight.position.set(0,700,0);
         vars.scene.add(hemilight);
-        
+
+        //Création du sol
+        let mesh = new THREE.Mesh(new THREE.PlaneBufferGeometry(2000, 2000), new THREE.MeshLambertMaterial({
+            color: new THREE.Color(0x006994)
+        }));
+        mesh.rotation.x = -Math.PI / 2;
+        mesh.receiveShadow = false;
+        vars.scene.add(mesh);
+
         Scene.animate();
     }
 };
