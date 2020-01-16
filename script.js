@@ -166,7 +166,7 @@ const Scene = {
         vars.stats = new Stats();
         vars.container.appendChild(vars.stats.dom);
 
-        Scene.loadFBX("piper_pa18.fbx", 0.1, [40, 30, -230], [0, 0, 0], 0xffff00, "plane", () => {
+        Scene.loadFBX("piper_pa18.fbx", 0.1, [40, 30, -700], [0, 0, 0], 0xffff00, "plane", () => {
             let airplane = new THREE.Group();
             airplane.add(Scene.vars.plane);
             console.log(Scene.vars.plane);
