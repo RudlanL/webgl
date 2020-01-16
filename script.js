@@ -60,9 +60,9 @@ const Scene = {
         if(Scene.vars.plane!= undefined){
             console.log(Scene.vars.plane.children[0]);
             var originPoint = Scene.vars.plane.children[0].position.clone();
-            for (var vertexIndex = 0; vertexIndex < Scene.vars.plane.children[0].geometry.vertices.length; vertexIndex++)
+            for (var vertexIndex = 0; vertexIndex < Scene.vars.plane.children[0].geometry.matrixWorld.length; vertexIndex++)
 	        {		
-		    var localVertex = Scene.vars.plane.children[0].geometry.vertices[vertexIndex].clone();
+		    var localVertex = Scene.vars.plane.children[0].geometry.matrixWorld[vertexIndex].clone();
 		    var globalVertex = localVertex.applyMatrix4( Scene.vars.plane.children[0].matrix );
 		    var directionVector = globalVertex.sub( Scene.vars.plane.children[0].position );
 		
@@ -166,7 +166,7 @@ const Scene = {
         vars.stats = new Stats();
         vars.container.appendChild(vars.stats.dom);
 
-        Scene.loadFBX("piper_pa18.fbx", 0.1, [40, 30, -700], [0, 0, 0], 0xffff00, "plane", () => {
+        Scene.loadFBX("piper_pa18.fbx", 0.1, [40, 30, -500], [0, 0, 0], 0xffff00, "plane", () => {
             let airplane = new THREE.Group();
             airplane.add(Scene.vars.plane);
             console.log(Scene.vars.plane);
