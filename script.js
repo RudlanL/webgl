@@ -1,5 +1,8 @@
 import * as THREE from './vendor/three.js-master/build/three.module.js';
 import {
+    FBXLoader
+} from './vendor/three.js-master/examples/jsm/loaders/FBXLoader.js';
+import {
     OrbitControls
 } from './vendor/three.js-master/examples/jsm/controls/OrbitControls.js';
 import { KeyframeTrack } from './vendor/three.js-master/src/Three.js';
@@ -9,16 +12,28 @@ const Scene = {
         container : null,
         scene: null,
         camera: null,
+        objet: null,
         renderer: null,
         controls: null,
-        keyboard: new THREE.Key
+        distance: 50
     },
     render: () => {
         Scene.vars.renderer.render(Scene.vars.scene,Scene.vars.camera);
 
     },
     onKeyDown: () => {
-
+        var keyCode = event.which;
+        if (keyCode == 87) {
+            Scene.vars.airplane.position.y += Scene.vars.distance;
+        } else if (keyCode == 83) {
+            Scene.vars.airplane.position.y -= Scene.vars.distance;
+        } else if (keyCode == 65) {
+            Scene.vars.airplane.position.x -= Scene.vars.distance;
+        } else if (keyCode == 68) {
+            Scene.vars.airplane.position.x += Scene.vars.distance;
+        } else if (keyCode == 32) {
+            Scene.vars.airplane.position.set(0, 0, 0);
+        }
     },
     animate: () => {
         Scene.render();
@@ -31,10 +46,9 @@ const Scene = {
             object.position.set(position[0], position[1], position[2]);
 
             object.rotation.set(rotation[0], rotation[1], rotation[2]);
-
+            Scene.vars[name] = object;
+            callback();
         });
-        Scene.vars[name] = object;
-        callback();
     },
     init: () =>{
         console.log("init");
@@ -84,8 +98,11 @@ const Scene = {
         wall.position.set(90,0,0);
         vars.scene.add(wall);
         //Ajout de l'avion
-        Scene.loadFBX("piper_pa18.fbx", 10, [0, 0, 0], [0, 0, 0], 0x000000, "airplane", () => {
-            
+        Scene.loadFBX("piper_pa18.fbx", 50, [0, 60, 0], [0, 0, 0], "airplane", () => {
+            console.log("Ajout de l'avion");
+            let airplane = new THREE.Group();
+            airplane.add(Scene.vars.airplane);
+            vars.scene.add(airplane);
         });
         Scene.animate();
     }
