@@ -13,9 +13,10 @@ const Scene = {
         stats: null,
         renderer: null,
         objet: null,
+        collidableMeshList: [],
         camera: null,
-        raycaster: new THREE.Raycaster(),
-        distance: 30
+        distance: 30,
+        plane: null
     },
     loadFBX: (file, size, position, rotation, color, name, callback) => {
         let loader = new FBXLoader();
@@ -61,7 +62,6 @@ const Scene = {
     },
     onKeyDown: (event) => {
         var keyCode = event.key;
-        console.log(keyCode);
         if (keyCode == 'z' || keyCode== 'Z') {
             if(Scene.vars.plane.rotation.y != 0){
                 Scene.vars.plane.rotation.y = 0
@@ -83,7 +83,6 @@ const Scene = {
             }
             Scene.vars.plane.position.x += Scene.vars.distance;
         } else if (keyCode == ' ') {
-            console.log("Reset");
             Scene.vars.plane.rotation.y = 0;
             Scene.vars.plane.position.set(0, 0, 0);
         }
@@ -92,6 +91,7 @@ const Scene = {
     init: () => {
         console.log("init");
         let vars = Scene.vars;
+        var collidableMeshList = [];
         // Preparer le container de la scene
         vars.container = document.createElement('div');
         vars.container.classList.add("fullscreen");
@@ -134,11 +134,12 @@ const Scene = {
         vars.scene.add(shadowPlane);
 
         //Création du terrain
-        let wall = new THREE.Mesh(new THREE.BoxGeometry(1000,100,60),new THREE.MeshLambertMaterial({
+        let wall = new THREE.Mesh(new THREE.BoxGeometry(500,100,200),new THREE.MeshLambertMaterial({
             color: new THREE.Color(0xFFFFFF)
         }));
         wall.position.set(90,0,0);
         vars.scene.add(wall);
+        collidableMeshList.push(wall);
 
         //Redimension de la window
         window.addEventListener('resize', Scene.onWindowResize, false);
@@ -146,10 +147,23 @@ const Scene = {
         vars.stats = new Stats();
         vars.container.appendChild(vars.stats.dom);
 
-        Scene.loadFBX("piper_pa18.fbx", 0.1, [0, 40, 0], [0, 0, 0], 0xffff00, "plane", () => {
+        Scene.loadFBX("piper_pa18.fbx", 0.1, [0, 30, 0], [0, 0, 0], 0xffff00, "plane", () => {
             let airplane = new THREE.Group();
             airplane.add(Scene.vars.plane);
+            
             vars.scene.add(airplane);
+            var originPoint = Scene.vars.plane.position.clone();
+            for (var vertexIndex = 0; vertexIndex < Scene.vars.plane.geometry.vertices.length; vertexIndex++)
+	        {		
+		    var localVertex = Scene.vars.plane.geometry.vertices[vertexIndex].clone();
+		    var globalVertex = localVertex.applyMatrix4( Scene.vars.plane.matrix );
+		    var directionVector = globalVertex.sub( Scene.vars.plane.position );
+		
+		    var ray = new THREE.Raycaster( originPoint, directionVector.clone().normalize() );
+		    var collisionResults = ray.intersectObjects( collidableMeshList );
+		    if ( collisionResults.length > 0 && collisionResults[0].distance < directionVector.length() ) 
+			    console.log('Hit')
+	        }
 
         });
         document.querySelector('#loader').remove();
