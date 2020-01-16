@@ -56,6 +56,24 @@ const Scene = {
     },
     //Rafraichissement 
     animate: () => {
+        
+        if(Scene.vars.plane!= undefined){
+            console.log(Scene.vars.plane.children[0]);
+            var originPoint = Scene.vars.plane.children[0].position.clone();
+            for (var vertexIndex = 0; vertexIndex < Scene.vars.plane.children[0].geometry.vertices.length; vertexIndex++)
+	        {		
+		    var localVertex = Scene.vars.plane.children[0].geometry.vertices[vertexIndex].clone();
+		    var globalVertex = localVertex.applyMatrix4( Scene.vars.plane.children[0].matrix );
+		    var directionVector = globalVertex.sub( Scene.vars.plane.children[0].position );
+		
+		    var ray = new THREE.Raycaster( originPoint, directionVector.clone().normalize() );
+            var collisionResults = ray.intersectObjects( collidableMeshList ,true);
+            console.log("Raycaster "+ray);
+		    if ( collisionResults.length > 0 && collisionResults[0].distance < directionVector.length() ) 
+			    console.log('Hit')
+	        }
+
+        }
         Scene.render();
 
         requestAnimationFrame(Scene.animate);
@@ -139,6 +157,7 @@ const Scene = {
         }));
         wall.position.set(90,0,0);
         vars.scene.add(wall);
+        console.log(wall);
         collidableMeshList.push(wall);
 
         //Redimension de la window
@@ -147,24 +166,13 @@ const Scene = {
         vars.stats = new Stats();
         vars.container.appendChild(vars.stats.dom);
 
-        Scene.loadFBX("piper_pa18.fbx", 0.1, [0, 30, 0], [0, 0, 0], 0xffff00, "plane", () => {
+        Scene.loadFBX("piper_pa18.fbx", 0.1, [40, 30, -230], [0, 0, 0], 0xffff00, "plane", () => {
             let airplane = new THREE.Group();
             airplane.add(Scene.vars.plane);
+            console.log(Scene.vars.plane);
             
             vars.scene.add(airplane);
-            var originPoint = Scene.vars.plane.position.clone();
-            for (var vertexIndex = 0; vertexIndex < Scene.vars.plane.geometry.vertices.length; vertexIndex++)
-	        {		
-		    var localVertex = Scene.vars.plane.geometry.vertices[vertexIndex].clone();
-		    var globalVertex = localVertex.applyMatrix4( Scene.vars.plane.matrix );
-		    var directionVector = globalVertex.sub( Scene.vars.plane.position );
-		
-		    var ray = new THREE.Raycaster( originPoint, directionVector.clone().normalize() );
-		    var collisionResults = ray.intersectObjects( collidableMeshList );
-		    if ( collisionResults.length > 0 && collisionResults[0].distance < directionVector.length() ) 
-			    console.log('Hit')
-	        }
-
+            
         });
         document.querySelector('#loader').remove();
 
