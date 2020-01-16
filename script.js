@@ -1,44 +1,23 @@
 import * as THREE from './vendor/three.js-master/build/three.module.js';
-import {
-    FBXLoader
-} from './vendor/three.js-master/examples/jsm/loaders/FBXLoader.js';
+import Stats from './vendor/three.js-master/examples/jsm/libs/stats.module.js';
 import {
     OrbitControls
 } from './vendor/three.js-master/examples/jsm/controls/OrbitControls.js';
-import { KeyframeTrack } from './vendor/three.js-master/src/Three.js';
-
+import {
+    FBXLoader
+} from './vendor/three.js-master/examples/jsm/loaders/FBXLoader.js';
 const Scene = {
-    vars:{
-        container : null,
+    vars: {
+        container: null,
         scene: null,
-        camera: null,
-        objet: null,
+        stats: null,
         renderer: null,
-        controls: null,
-        distance: 50
+        objet: null,
+        camera: null,
+        raycaster: new THREE.Raycaster(),
+        distance: 30
     },
-    render: () => {
-        Scene.vars.renderer.render(Scene.vars.scene,Scene.vars.camera);
-
-    },
-    onKeyDown: () => {
-        var keyCode = event.which;
-        if (keyCode == 87) {
-            Scene.vars.airplane.position.y += Scene.vars.distance;
-        } else if (keyCode == 83) {
-            Scene.vars.airplane.position.y -= Scene.vars.distance;
-        } else if (keyCode == 65) {
-            Scene.vars.airplane.position.x -= Scene.vars.distance;
-        } else if (keyCode == 68) {
-            Scene.vars.airplane.position.x += Scene.vars.distance;
-        } else if (keyCode == 32) {
-            Scene.vars.airplane.position.set(0, 0, 0);
-        }
-    },
-    animate: () => {
-        Scene.render();
-    },
-    loadFBX: (file, size, position, rotation, name, callback) => {
+    loadFBX: (file, size, position, rotation, color, name, callback) => {
         let loader = new FBXLoader();
         loader.load(file, function (object) {
             object.scale.set(size, size, size);
@@ -46,19 +25,80 @@ const Scene = {
             object.position.set(position[0], position[1], position[2]);
 
             object.rotation.set(rotation[0], rotation[1], rotation[2]);
+
+
+            object.traverse(function (node) {
+                if (node.isMesh) {
+                    node.receiveShadow = true;
+                    node.castShadow = true;
+                    node.material.color = new THREE.Color(color);
+                }
+            });
+
             Scene.vars[name] = object;
+
             callback();
+
         });
+
     },
-    init: () =>{
+    onWindowResize: () => {
+        let vars = Scene.vars;
+        vars.camera.aspect = window.innerWidth / window.innerHeight;
+        vars.camera.updateProjectionMatrix();
+        vars.renderer.setSize(window.innerWidth, window.innerHeight);
+    },
+    render: () => {
+        Scene.vars.renderer.render(Scene.vars.scene, Scene.vars.camera);
+
+        Scene.vars.stats.update();
+    },
+    //Rafraichissement 
+    animate: () => {
+        Scene.render();
+
+        requestAnimationFrame(Scene.animate);
+    },
+    onKeyDown: (event) => {
+        var keyCode = event.key;
+        console.log(keyCode);
+        if (keyCode == 'z' || keyCode== 'Z') {
+            if(Scene.vars.plane.rotation.y != 0){
+                Scene.vars.plane.rotation.y = 0
+            }
+            Scene.vars.plane.position.z += Scene.vars.distance;
+        } else if (keyCode == 's' || keyCode== 'S') {
+            if(Scene.vars.plane.rotation.y != Math.PI){
+                Scene.vars.plane.rotation.y = Math.PI
+            }
+            Scene.vars.plane.position.z -= Scene.vars.distance;
+        } else if (keyCode == 'q' || keyCode== 'Q') {
+            if(Scene.vars.plane.rotation.y != -Math.PI/2){
+                Scene.vars.plane.rotation.y = -Math.PI/2
+            }
+            Scene.vars.plane.position.x -= Scene.vars.distance;
+        } else if (keyCode == 'd' || keyCode== 'D') {
+            if(Scene.vars.plane.rotation.y != Math.PI/2){
+                Scene.vars.plane.rotation.y = Math.PI/2
+            }
+            Scene.vars.plane.position.x += Scene.vars.distance;
+        } else if (keyCode == ' ') {
+            console.log("Reset");
+            Scene.vars.plane.rotation.y = 0;
+            Scene.vars.plane.position.set(0, 0, 0);
+        }
+        Scene.render();
+    },
+    init: () => {
         console.log("init");
         let vars = Scene.vars;
+        // Preparer le container de la scene
         vars.container = document.createElement('div');
         vars.container.classList.add("fullscreen");
         document.body.appendChild(vars.container);
 
         vars.scene = new THREE.Scene();
-        vars.scene.background = new THREE.Color(0xe1e1e1);
+        vars.scene.background = new THREE.Color(0xa0a0a0);
 
         vars.renderer = new THREE.WebGLRenderer({
             antialias: true
@@ -69,16 +109,10 @@ const Scene = {
         vars.renderer.shadowMapSoft = true;
         vars.container.appendChild(vars.renderer.domElement);
 
-        //Création de la camera
-        vars.camera = new THREE.PerspectiveCamera(57,window.innerWidth /window.innerHeight,1,2000)
-        vars.camera.position.set(0,1000,1000);
-        vars.camera.rotation.x = -Math.PI/5;
+        //Creation de la caméra
+        vars.camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 1, 2000);
+        vars.camera.position.set(-1.5, 210, 572);
 
-        //évenement
-        window.addEventListener('keydown', Scene.onKeyDown, false);
-    
-
-        //Creation de l'HemishereLight
         let hemilight = new THREE.HemisphereLight(0xFFFFFF,0x444444,0.5);
         hemilight.position.set(0,700,0);
         vars.scene.add(hemilight);
@@ -91,20 +125,38 @@ const Scene = {
         mesh.receiveShadow = false;
         vars.scene.add(mesh);
 
+        let planeMaterial = new THREE.ShadowMaterial();
+        planeMaterial.opacity = 0.07;
+        let shadowPlane = new THREE.Mesh(new THREE.PlaneBufferGeometry(2000,
+            2000), planeMaterial);
+        shadowPlane.rotation.x = -Math.PI / 2;
+        shadowPlane.receiveShadow = true;
+        vars.scene.add(shadowPlane);
+
         //Création du terrain
-        let wall = new THREE.Mesh(new THREE.BoxGeometry(50,100,60),new THREE.MeshLambertMaterial({
+        let wall = new THREE.Mesh(new THREE.BoxGeometry(1000,100,60),new THREE.MeshLambertMaterial({
             color: new THREE.Color(0xFFFFFF)
         }));
         wall.position.set(90,0,0);
         vars.scene.add(wall);
-        //Ajout de l'avion
-        Scene.loadFBX("piper_pa18.fbx", 50, [0, 60, 0], [0, 0, 0], "airplane", () => {
-            console.log("Ajout de l'avion");
+
+        //Redimension de la window
+        window.addEventListener('resize', Scene.onWindowResize, false);
+        window.addEventListener('keydown',Scene.onKeyDown,false);
+        vars.stats = new Stats();
+        vars.container.appendChild(vars.stats.dom);
+
+        Scene.loadFBX("piper_pa18.fbx", 0.1, [0, 40, 0], [0, 0, 0], 0xffff00, "plane", () => {
             let airplane = new THREE.Group();
-            airplane.add(Scene.vars.airplane);
+            airplane.add(Scene.vars.plane);
             vars.scene.add(airplane);
+
         });
+        document.querySelector('#loader').remove();
+
+
         Scene.animate();
+
     }
 };
 Scene.init();
